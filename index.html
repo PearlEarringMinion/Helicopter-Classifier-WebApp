@@ -1,0 +1,253 @@
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>画像をアップロードすると画像認識してくれるページ</title>
+  <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+  <style>
+    .head_test {
+    margin:  0;                 /* デフォルトCSS打ち消し */
+    position:  relative;        /* 位置調整 */
+    font-weight:  normal;       /* 文字の太さ調整 */
+    font-size: 40px;            /* 文字サイズ指定 */
+    text-align:  center;        /* 文字位置指定 */
+    padding: 20px 0 15px;       /* 余白指定 */
+    border-top: solid 1px;      /* 線指定 */
+    border-bottom:  solid 1px;  /* 線指定 */
+    width:  400px;              /* 幅指定 */
+    margin: 0 auto 35px;        /* 周りの余白指定 */
+    }
+
+    body {
+      text-align: center;
+    }
+
+    #canvas {
+      margin: 0 auto;
+    }
+
+    #preImage {
+      margin: 0 auto;
+    }
+
+    footer{
+    width: 100%;
+    margin: 0 auto;
+    position: absolute;/*←絶対位置*/
+    bottom: 0; /*下に固定*/
+    } 
+
+    #box30 {
+    width: 400px;
+    margin: 0 auto;
+    background: #f1f1f1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.22);
+    }
+
+    #box30 .box-title {
+    font-size: 1.2em;
+    background: #5fc2f5;
+    padding: 4px;
+    text-align: center;
+    color: #FFF;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    }
+
+    #box30 p {
+    padding: 15px 20px;
+    margin: 0;
+    font-weight: bold;
+    }
+
+    #box30 label {
+    font-size: 1.5em;
+    }
+
+    #subBox {
+    width: 400px;
+    margin: 0 auto;
+    background: #f1f1f1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.22);
+    }
+
+    #subBox .box-title {
+    font-size: 1.2em;
+    background: #5fc2f5;
+    padding: 4px;
+    text-align: center;
+    color: #FFF;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    }
+
+    #subBox p {
+    padding: 15px 20px;
+    margin: 0;
+    }
+
+    #subBox label {
+    font-size: 1.5em;
+    }
+
+
+
+    
+
+
+  </style>
+</head>
+
+<body>
+  <h1 class="head_test">Helicopter Classifier Web App</h1>
+  <div class="upload"><input type="file" name="file" id="file"></div>
+
+  <br>
+  <br>
+
+  <canvas id="canvas"></canvas>
+  <div id="preImage"><img src="AI-icon.png"></div>
+
+
+  <br>
+  <br>
+
+  <div id="box30">
+    <div class="box-title">Predictions</div>
+    <p id="label">Now thinking...</p>
+    <p id="confidence"></p>
+  </div>
+
+  <div id="subBox">
+    <div class="box-title">May be...</div>
+    <p id="sublabel1"></p>
+    <p id="subLabel2"></p>
+  </div>
+   
+
+ <footer>Powered by TensorFlow.js<br>
+        Model created by Teachable Machine</footer>
+
+
+
+
+
+  <script>
+
+  //変数の定義とDOMの取得
+  let file = document.getElementById('file');
+  let canvas = document.getElementById('canvas');
+  let preImage = document.getElementById('preImage')
+  let predictionLabel = document.getElementById('box30')
+  let subPredictionLabel = document.getElementById('subBox')
+  let confidenceLabel = document.getElementById('confidence')
+  let canvasWidth = 400;
+  let canvasHeight = 300;
+  let uploadImgSrc;
+  let label = document.querySelector("#label");
+  let confidence = document.querySelector("#confidence");
+  let subLabel1 = document.querySelector("#subLabel1");
+  let subLabel2 = document.querySelector("#subLabel2");
+
+  //canvasをデフォルトで非表示にする
+  canvas.style.display = "none";
+
+  //予測結果をデフォルトで非表示にする
+  predictionLabel.style.display = "none";
+  subPredictionLabel.style.display = "none";
+
+  //確率ラベルを非表示にする
+  confidenceLabel.style.display = "none";
+  
+  
+
+  // 作成したモデルのURL
+  const imageModelURL = 'https://teachablemachine.withgoogle.com/models/BsBtzr81C/';
+  //'https://teachablemachine.withgoogle.com/models/-tMbNUiHI/
+
+  // Canvasの準備
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+  let ctx = canvas.getContext('2d');
+
+  //モデルをクラウド上からロードする
+  let classifier = ml5.imageClassifier(imageModelURL + 'model.json', () => {
+      // ロード完了
+      console.log('Model Loaded!');
+    });
+
+//画像を読み込む関数
+  function loadLocalImage(e) {
+    // ファイル情報を取得
+    let fileData = e.target.files[0];
+
+    // 画像ファイル以外は処理を止める
+    if (!fileData.type.match('image.*')) {
+      alert('This file is not type of image files.');
+      return;
+    }
+
+    // FileReaderオブジェクトを使ってファイル読み込み
+    let reader = new FileReader();
+    // ファイル読み込みに成功したときの処理
+    reader.onload = function () {
+      // Canvas上に表示する
+      uploadImgSrc = reader.result;
+      canvasDraw();
+      canvas.style.display = "block";
+      preImage.style.display = "none";
+      predictionLabel.style.display = "block";
+      subPredictionLabel.style.display = "block";
+    }
+    // ファイル読み込みを実行
+    reader.readAsDataURL(fileData);
+  }
+
+  // ファイルが指定された時にloadLocalImage()を実行
+  file.addEventListener('change', loadLocalImage, false);
+
+  // Canvas上に画像を表示する関数
+  function canvasDraw() {
+    // canvas内の要素をクリアする
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    // Canvas上に画像を表示
+    let img = new Image();
+    img.src = uploadImgSrc;
+    img.onload = function () {
+     if (this.width / this.height > canvasWidth / canvasHeight) {
+        // 幅に合わせて画像サイズ設定
+        var imgWidth = canvasWidth;
+        var imgHeight = Math.floor(this.height * (canvasWidth / this.width));
+      } else {
+        // 高さに合わせて画像サイズ設定
+        imgHeight = canvasHeight;
+        imgWidth = Math.floor(this.width * (canvasHeight / this.height));
+      }
+
+      ctx.drawImage(img, 0, 0, imgWidth, imgHeight);
+    }
+    classifyCanvas();
+  }
+
+  function classifyCanvas() {
+    classifier.classify(canvas, gotResult);
+  }
+
+  // 画像認識結果を表示する関数
+  function gotResult(error, results) {
+    if (error) {
+      console.error(error);
+    }
+    console.log(results);
+    // 結果のラベルと信頼度を表示
+    label.textContent = `${results[0].label} (${results[0].confidence.toFixed(3) * 100}%)`;
+    confidence.textContent = ``;
+
+    subLabel1.textContent = `${results[1].label} (${results[1].confidence.toFixed(3) * 100}%)`;
+    subLabel2.textContent = `${results[2].label} (${results[2].confidence.toFixed(3) * 100}%)`;
+  }
+  </script>
+</body>
+
+</html>
