@@ -23,6 +23,7 @@ GoogleのTeachableMachineでモデルを作成して、TensorFlow.jsを利用し
 - Bell430
 - AS350
 - AS365
+- C680
 
 
 
