@@ -16,11 +16,13 @@ GoogleのTeachableMachineでモデルを作成して、TensorFlow.jsを利用し
 【対応機種】Type of helicopter
 - Bell204
 - Bell206
+- Bell430
+- Bell412
 - MD900
 - BK117C2
 - AW139
 - S76
-- Bell430
+- AS332
 - AS350
 - AS365
 - C680
